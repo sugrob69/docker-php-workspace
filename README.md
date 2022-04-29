@@ -8,7 +8,6 @@
 - [Программы в docker-контейнерах PHP](#Программы-в-docker-контейнерах-PHP)
 - [Начало работы](#Начало-работы)
 - [Вопросы и ответы](#Вопросы-и-ответы)
-- [Развёртывание дампов MySQL, PostgreSQL и MongoDB](#Развёртывание-дампов-MySQL-PostgreSQL-и-MongoDB)
 
 ## Требования
 
@@ -17,21 +16,16 @@
 
 ## Возможности и особенности
 
-- Несколько версий **PHP** — **7.3**, **7.1** и **8.0** с набором наиболее востребованных расширений. 
-- Возможность использовать для web-проектов разные версии **PHP**.
+- Версия **PHP** — **8.1** с набором наиболее востребованных расширений. 
 - Готовый к работе монитор процессов **Supervisor**.
 - Предварительно сконфигурированный веб-сервер **Nginx**.
 - Базы данных:
-  - **MySQL 5.7**.
-  - **MySQL 8**.
   - **PostgreSQL** (latest).
-  - **MongoDB 4.2**.
   - **Redis** (latest).
 - Настройка основных параметров окружения через файл **.env**.
 - Возможность модификации сервисов через **docker-compose.yml**.
 - Последняя версия **docker-compose.yml**.
 - Все docker-контейнеры базируются на официальных образах.
-- Структурированный **Dockerfile** для создания образов **PHP**.
 - Каталоги большинства docker-контейнеров, в которых хранятся пользовательские данные и параметры конфигурации смонтированы на локальную машину.
 
 В целом, среда разработки удовлетворяет требованию — _**«при использовании Docker каждый контейнер должен содержать в себе только один сервис»**_.
@@ -46,13 +40,9 @@
 ├── .ssh
 ├── README.md
 ├── docker-compose.yml
-├── mongo
-├── mysql-5.7
-├── mysql-8
 ├── nginx
 ├── php-ini
 ├── php-workers
-├── php-7-workspace
 ├── php-8-workspace
 ├── postgres
 ├── projects
@@ -88,40 +78,13 @@ REDIS_PORT=6379
 
 # Настройки Postgres
 POSTGRES_DB=test
-POSTGRES_USER=pg_user
+POSTGRES_USER=root
 POSTGRES_PASSWORD=secret
 POSTGRES_PORT=54322
 
-# Настройки общие для MySQL 8.x и MySQL 5.7.x
-MYSQL_ROOT_PASSWORD=secret
-MYSQL_DATABASE=test
-
-# Настройки MySQL 8.x
-# Порт, который следует использовать
-# для соединения с локального компьютера
-MYSQL_8_PORT=4308
-
-# Настройки MySQL 5.7.x
-# Порт, который следует использовать
-# для соединения с локального компьютера
-MYSQL_5_7_PORT=4307
-
-# Настройки MongoDB
-# Порт, который следует использовать
-# для соединения с локального компьютера
-MONGO_PORT=27017
-
-# Настройки PHP 8.0
+# Настройки PHP 8.1
 # Внешний порт, доступен с локального компьютера
-PHP_8_0_PORT=9006
-
-# Настройки PHP 7.3
-# Внешний порт, доступен с локального компьютера
-PHP_7_3_PORT=9003
-
-# Настройки PHP 7.1
-# Внешний порт, доступен с локального компьютера
-PHP_7_1_PORT=9001
+PHP_8_1_PORT=9006
 ```
 
 ### .gitignore
@@ -140,64 +103,6 @@ PHP_7_1_PORT=9001
 
 Документ в формате YML, в котором определены правила создания и запуска многоконтейнерных приложений Docker. 
 В этом файле описана структура среды разработки и некоторые параметры необходимые для корректной работы web-приложений.
-
-### mongo
-
-Каталог базы данных MongoDB.
-
-```
-├── configdb
-│   └── mongo.conf
-├── db
-└── dump
-```
-
-**mongo.conf** — Файл конфигурации MongoDB. В этот файл можно добавлять параметры, которые при перезапуске MongoDB будут применены.
-
-**db** — эта папка предназначена для хранения пользовательских данных MongoDB.
-
-**dump** — каталог для хранения дампов.  
- 
-### mysql-5.7
-
-Каталог базы данных MySQL 5.7.
-
-```
-├── conf.d
-│   └── config-file.cnf
-├── data
-├── dump
-└── logs
-```
-
-**config-file.cnf** — файл конфигурации. В этот файл можно добавлять параметры, которые при перезапуске MySQL 5.7 будут применены.
-
-**data** — эта папка предназначена для хранения пользовательских данных MySQL 5.7.
-
-**dump** — каталог для хранения дампов.
-
-**logs** — каталог для хранения логов.
-
-### mysql-8
-
-Каталог базы данных MySQL 8.
-
-```
-├── conf.d
-│   └── config-file.cnf
-├── data
-├── dump
-└── logs
-```
-
-**config-file.cnf** — файл конфигурации. В этот файл можно добавлять параметры, которые при перезапуске MySQL 8 будут применены.
-
-**data** — эта папка предназначена для хранения пользовательских данных MySQL 8.
-
-**dump** — каталог для хранения дампов.
-
-**logs** — каталог для хранения логов.
-
 
 ### nginx
 
@@ -220,10 +125,10 @@ PHP_7_1_PORT=9001
 server {
     listen 80;
     index index.php index.html;
-    server_name project-1.localhost;
+    server_name project-1.test;
     error_log /var/log/nginx/project-1.error.log;
     access_log /var/log/nginx/project-1.access.log combined if=$loggable;
-    root /var/www/project-1.ru;
+    root /var/www/project-1.test;
 
     location / {
         try_files $uri $uri/ /index.php?$query_string;
@@ -232,30 +137,7 @@ server {
     location ~ \.php$ {
         try_files $uri =404;
         fastcgi_split_path_info ^(.+\.php)(/.+)$;
-        fastcgi_pass php-7.3:9000;
-        fastcgi_index index.php;
-        include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        fastcgi_param PATH_INFO $fastcgi_script_name;
-    }
-}
-
-server {
-    listen 80;
-    index index.php index.html;
-    server_name project-2.localhost;
-    error_log /var/log/nginx/project-2.error.log;
-    access_log /var/log/nginx/project-2.access.log combined if=$loggable;
-    root /var/www/project-2.ru;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        try_files $uri =404;
-        fastcgi_split_path_info ^(.+\.php)(/.+)$;
-        fastcgi_pass php-7.1:9000;
+        fastcgi_pass php-8.1:9000;
         fastcgi_index index.php;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
@@ -264,26 +146,24 @@ server {
 }
 ```
 
-В файле конфигурации описаны настройки для 2 web-проектов — **project-1.localhost** и **project-2.localhost**.
+В файле конфигурации описаны настройки для web-проекта — **project-1.test**.
 
 Здесь следует обратить внимание на то, как производится перенаправление запросов к нужному docker-контейнеру.
 
-Например, для проекта **project-1.localhost** указано:
+Например, для проекта **project-1.test** указано:
 
 ```nginx
-fastcgi_pass php-7.3:9000;
+fastcgi_pass php-8.1:9000;
 ```
 
-**php-7.3** — название docker-контейнера, а **9000** — порт внутренней сети. Контейнеры между собой связаны через внутреннюю сеть, которая определена в файле **docker-compose.yml**.  
+**php-8.1** — название docker-контейнера, а **9000** — порт внутренней сети. Контейнеры между собой связаны через внутреннюю сеть, которая определена в файле **docker-compose.yml**.  
   
 ### php-ini
 
 В этом каталоге находятся файлы конфигурации PHP.
 
 ```
-├── 7.1
-│   └── php.ini
-└── 7.3
+└── 8.1
     └── php.ini
 ```
 Для каждой версии PHP — свой файл конфигурации.
@@ -294,10 +174,7 @@ fastcgi_pass php-7.3:9000;
 Место для хранения файлов конфигурации **Supervisor**.
 
 ```
-├── 7.1
-│   └── supervisor.d
-│       
-└── 7.3
+└── 8.1
     └── supervisor.d
 ```
 
@@ -341,9 +218,9 @@ project-2.ru
 ...
 ```
 
-Содержимое каталога **projects** доступно из контейнеров **php-7.1** и **php-7.3**. 
+Содержимое каталога **projects** доступно из контейнера **php-8.1**. 
 
-Если зайти в контейнер **php-7.1** или **php-7.3**, то в каталоге **/var/www** будут доступны проекты, которые расположены в **projects** на локальной машине.
+Если зайти в контейнер **php-8.1**, то в каталоге **/var/www** будут доступны проекты, которые расположены в **projects** на локальной машине.
 
 ### redis
 
@@ -407,14 +284,13 @@ cp .env-example .env
 
 <br>
 
-Для примера, далее мы будем исходить из предположения, что у вас есть 2 проекта:
+Для примера, далее мы будем исходить из предположения, что у вас есть проект:
 
 ```
-project-1.ru
-project-2.ru
+project-1.test
 ```
 
-**project-1.ru** — будет работать на версии PHP 7.3, **project-2.ru** - на PHP 7.1, а **project-3.ru** - на PHP 8.0.
+**project-1.test** — будет работать на версии PHP 8.1.
 
 **4**. Отредактируйте настройки виртуальных хостов **Nginx**.
 
@@ -433,8 +309,7 @@ project-2.ru
 Строки, которые вы добавляете в этот файл, будут выглядеть примерно так:
 
 ```
-127.0.0.1   project-1.localhost
-127.0.0.1   project-2.localhost
+127.0.0.1   project-1.test
 ```
 
 В данном случае, мы исходим из того, что **Nginx**, запущенный в docker-контейнере, доступен по адресу **127.0.0.1** и web-сервер слушает порт **80**.
@@ -503,14 +378,11 @@ PING docker.for.mac.localhost (192.168.65.2): 56 data bytes
 
 **Хосты и порты сервисов**
 
-Для того, чтобы настроить соединения с базами данных из docker-контейнеров **php-7.1** и **php-7.3** следует использовать следующие названия хостов и порты:
+Для того, чтобы настроить соединения с базами данных из docker-контейнеров **php-8.1** следует использовать следующие названия хостов и порты:
 
 | Сервис     | Название хоста | Порт  |
 |------------|----------------|-------|
-| MySQL 5\.7 | mysql\-5\.7    | 3306  |
-| MySQL 8    | mysql\-8       | 3306  |
 | PostgreSQL | postgres       | 5432  |
-| MongoDB    | mongo          | 27017 |
 | Redis      | redis          | 6379  |
 
 Именно эти параметры следует использовать для конфигурации web-проектов. 
@@ -569,13 +441,8 @@ docker ps
   
 ```
 CONTAINER ID        IMAGE                          COMMAND                  CREATED             STATUS              PORTS                               NAMES
-8d348959c475        docker-php-workspace_php-7.1   "docker-php-entrypoi…"   6 minuts ago        Up 54 seconds       0.0.0.0:9001->9000/tcp              php-7.1
-a93399727ff6        docker-php-workspace_php-7.3   "docker-php-entrypoi…"   6 minuts ago        Up 53 seconds       0.0.0.0:9003->9000/tcp              php-7.3
-7d879f796fdc        docker-php-workspace_php-8.0   "docker-php-entrypoi…"   6 minuts ago        Up 52 seconds
+7d879f796fdc        docker-php-workspace_php-8.0   "docker-php-entrypoi…"   6 minuts ago        Up 52 seconds       0.0.0.0:9006->9000/tcp              php-8.1
 5cd80ac95388        nginx:stable-alpine            "/docker-entrypoint.…"   6 minuts ago        Up 51 seconds       0.0.0.0:80->80/tcp                  nginx
-70182bc9e44c        mysql:5.7                      "docker-entrypoint.s…"   6 minuts ago        Up 54 seconds       33060/tcp, 0.0.0.0:4307->3306/tcp   mysql-5.7
-46f2766ec0b9        mysql:8.0.21                   "docker-entrypoint.s…"   6 minuts ago        Up 53 seconds       33060/tcp, 0.0.0.0:4308->3306/tcp   mysql-8
-a59e7f4b3c61        mongo:4.2                      "docker-entrypoint.s…"   6 minuts ago        Up 54 seconds       0.0.0.0:27017->27017/tcp            mongo
 eae8d62ac66e        postgres:alpine                "docker-entrypoint.s…"   6 minuts ago        Up 53 seconds       0.0.0.0:54322->5432/tcp             postgres
 bba24e86778a        redis:latest                   "docker-entrypoint.s…"   6 minuts ago        Up 54 seconds       0.0.0.0:6379->6379/tcp              redis
 ```  
@@ -586,26 +453,13 @@ bba24e86778a        redis:latest                   "docker-entrypoint.s…"   6 
 
 Если для работы web-приложений необходимо установить зависимости, например через менеджер пакетов **Composer** или **NPM**, то сейчас самое время сделать это.
 
-В контейнерах **php-7.1**, **php-7.3** и **php-8.0** уже установлен и **Composer** и **NPM**.
+В контейнере **php-8.1** уже установлен и **Composer** и **NPM**.
 
-Войдите в контейнер **php-7.1**:
-
-```shell script
-docker exec -it php-7.1 bash  
-```
-
-или
+Войдите в контейнер **php-8.1**:
 
 ```shell script
-docker exec -it php-7.3 bash  
+docker exec -it php-8.1 bash  
 ```
-
-или
-
-```shell script
-docker exec -it php-8.0 bash  
-```
-
 Перейдите в рабочий каталог необходимого web-проекта и выполните требуемые действия.
 
 Например, установите зависимости через **Composer** при помощи команды:
@@ -648,12 +502,12 @@ docker inspect container_name
 
 **container_name** — имя контейнера.
 
-### Как узнать какие расширения PHP установлены в контейнере php-7.3?
+### Как узнать какие расширения PHP установлены в контейнере php-8.1?
 
-Если контейнер **php-8.0** запущен, то выполните команду:
+Если контейнер **php-8.1** запущен, то выполните команду:
 
 ```shell script
-docker exec -it php-8.0 php -m
+docker exec -it php-8.1 php -m
 ```
 
 ### Как удалить все контейнеры?
@@ -677,7 +531,7 @@ docker rm -v $(docker ps -aq -f status=exited) # Все неактивные
 ```
 
 
-## Развёртывание дампов MySQL, PostgreSQL и MongoDB
+## Развёртывание дампов PostgreSQL
    
 Если для работы web-проектов требуются перенести данные в хранилища, то следуйте описанным ниже инструкциям.         
        
@@ -698,55 +552,3 @@ psql --username user_name database_name < /path/to/dump/pgsql-backup.sql
 **user_name** — имя пользователя. Значение *POSTGRES_USER*.
 
 **database_name** — название базы данных. Значение *POSTGRES_DB*.
-
-### Как развернуть дамп MySQL?
-
-**Вариант 1** 
-
-Если требуется создать дополнительных пользователей, то следует это сделать перед началом процедуры загрузки дампа.  
-
-В файле **mysql/conf.d/config-file.cnf** отключите лог медленных запросов **slow_query_log=0** или установите большое значение **long_query_time**, например 1000.
-
-Если дамп сжат утилитой gzip, сначала следует распаковать архив:
-
-```shell script
-gunzip databases-dump.sql.gz
-```
-
-Затем можно развернуть дамп, выполнив на локальном компьютере команду:
-
-```shell script
-docker exec -i mysql mysql --user=root --password=secret --force < databases-dump.sql
-````
-Указывать пароль в командной строке — плохая практика, не делайте так в производственной среде. 
-
-MySQL выдаст справедливое предупреждение:
-
->mysql: [Warning] Using a password on the command line interface can be insecure.
-
-Ключ *--force* говорит MySQL, что ошибки следует проигнорировать и продолжить развёртывание дампа. Этот ключ иногда может пригодится, но лучше его без необходимости не применять. 
-
-**Вариант 2**
-
-Воспользоваться утилитой Percona **XtraBackup**. 
-
-Percona **XtraBackup** — это утилита для горячего резервного копирования баз данных MySQL.
-
-О том, как работать с **XtraBackup** можно узнать по ссылке: https://habr.com/ru/post/520458/. 
-
-### Как развернуть дамп MongoDB?
-
-1. Скопируйте фалы дампа в каталог _**mongo/dump**_.
-
-2. Войдите в контейнер mongo:
-
-```shell script
- docker exec -it mongo sh
-```
-Выполните следующую команду, чтобы развернуть дамп базы _**database_name**_:
- 
-```shell script
- mongorestore -d database_name /dump/databases/database_name
-```
-
-
